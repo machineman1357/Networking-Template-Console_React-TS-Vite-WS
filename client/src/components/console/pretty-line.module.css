@@ -1,0 +1,12 @@
+.prettyLine_fade {
+    width: 1px;
+    height: 300px;
+    background: linear-gradient(0deg, rgba(0, 0, 0, 0) 0%, hsl(228deg 29% 49%) 40%, rgb(84 100 167) 60%, rgba(0, 0, 0, 0) 100%);
+}
+
+.prettyLine_filled {
+    width: calc(100% - 100px);
+    height: 1px;
+    margin: 0px 50px 10px 50px;
+    background-color: rgb(84 100 167);
+}

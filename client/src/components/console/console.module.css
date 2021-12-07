@@ -1,0 +1,180 @@
+.console_container {
+    position: absolute;
+    left: 50%;
+    /* top: -100px; */
+    transform: translate(-50%, 0);
+    width: calc(100% - 100px);
+    height: 60%;
+    user-select: none;
+    transition: 500ms;
+    /* opacity: 0; */
+}
+
+.console_container_fadeIn {
+    opacity: 1 !important;
+    top: 50px !important;
+}
+
+.console_bg {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient( 0deg, rgba(59, 56, 102, 1) 0%, rgba(56, 65, 120, 1) 29%, rgba(58, 87, 153, 1) 100%);
+    opacity: 0.8;
+    box-shadow: inset 0 0 2px #111226;
+}
+
+.console_dropShadow {
+    width: calc(100% - 49px);
+    height: 102%;
+    position: absolute;
+    top: 82px;
+    left: 50%;
+    transform: translate(-50%, 0);
+    background: radial-gradient(#0d0c177d, #0000007d);
+    z-index: -1;
+    border-radius: 410px;
+    filter: blur(63px);
+}
+
+.console_sendButtonAndPrettyLine_container {
+    display: flex;
+    align-items: center;
+}
+
+.console_messageBox_container {
+    width: calc(100% - 60px);
+    font-size: 14px;
+    line-height: 15px;
+    height: calc(100% - 187px);
+    overflow: hidden;
+    margin: 20px 0 0 50px;
+    filter: drop-shadow(0px 0px 21px #4180fe88);
+}
+
+.console_messages_container {
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+}
+
+.console_messagesFade {
+    width: calc(100% - -78px);
+    height: 40px;
+    background: #000000b3;
+    position: absolute;
+    left: -175px;
+    filter: blur(41px);
+    transition: 500ms;
+}
+
+.console_messagesFade_disabled {
+    background: #00000000 !important;
+}
+
+.console_messages {}
+
+.console_messagesAndSendButton_container {
+    display: flex;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.console_messagesAndInputBox_container {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    left: 0;
+    top: 0;
+    flex-direction: column;
+}
+
+.console_inputBox_container {
+    width: 100%;
+    height: 25px;
+    display: flex;
+    padding: 0 50px 0 50px;
+    margin: 5px 0 0 0;
+}
+
+.console_messageInput {
+    width: 100%;
+    height: 100%;
+    border-radius: 4px;
+    border-width: 1px;
+    background-color: #3c528c00;
+    border: none;
+    appearance: none;
+    color: #d4dbf9;
+    outline: none;
+    font-family: system-ui;
+}
+
+.console_sendMessageButton {
+    width: 175px;
+    height: 33px;
+    background: linear-gradient( 90deg, #336deb, #3f71dd);
+    color: #d4dbf9;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    filter: drop-shadow(0px 0px 21px #4180fe88);
+    padding: 0 0 0 13px;
+    font-weight: 500;
+}
+
+.console_button_materialFont {
+    font-family: Material Icons;
+    font-size: 25px;
+    margin: 0 10px 0 auto;
+}
+
+.console_sendMessageButton:hover {
+    background: linear-gradient( 90deg, #4e81f0, #5284f0);
+    cursor: pointer;
+}
+
+.console_sendMessageButton:active {
+    filter: opacity(0.6);
+}
+
+.console_topGlow {
+    background: radial-gradient(ellipse 50% 579px at 50% -10px, #ffffff1a, transparent);
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+}
+
+.console_message {
+    animation: console_message_fadeIn 500ms;
+}
+
+@keyframes console_message_fadeIn {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+.console_titleAndDescriptionAndMessagesContainer {
+    height: calc(100% - 50px);
+}
+
+.console_title {
+    font-size: 60px;
+    font-weight: 600;
+    padding: 50px 0 0 50px;
+}
+
+.console_description {
+    font-size: 28px;
+    font-weight: 300;
+    padding: 0 0 0 50px;
+}

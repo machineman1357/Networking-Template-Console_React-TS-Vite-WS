@@ -1,0 +1,11 @@
+.scrollbar::-webkit-scrollbar-track {
+    background: linear-gradient(0deg, rgba(0, 0, 0, 0) 0%, hsl(228deg 29% 49%) 40%, rgb(84 100 167) 60%, rgba(0, 0, 0, 0) 100%);
+}
+
+.scrollbar::-webkit-scrollbar {
+    width: 15px;
+}
+
+.scrollbar::-webkit-scrollbar-thumb {
+    background: linear-gradient(359deg, #336deb, #3f71dd);
+}

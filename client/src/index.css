@@ -1,0 +1,22 @@
+html,
+body {
+    height: 100%;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    background: #fafafa;
+    font-family: 'Roboto', sans-serif;
+    background: radial-gradient(#303038, #171719);
+    overscroll-behavior: none;
+    overflow: hidden;
+    font-family: system-ui;
+    color: #d4dbf9;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+pre {
+    text-shadow: 1px 1px black;
+}
