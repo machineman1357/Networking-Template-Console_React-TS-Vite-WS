@@ -11,31 +11,6 @@ import consoleStyles from "./console.module.css";
 import prettyLineStyles from "./pretty-line.module.css";
 import scrollbarStyles from "./scrollbar.module.css";
 
-/*
-function setEvents() {
-    ref_console_sendMessageButton.onclick = sendMessage;
-    ref_console_messages_container.onscroll = onMessagesScroll;
-}
-
-function setRefs() {
-    ref_console_container = document.querySelector("#console_container");
-    ref_console_messages_container = document.querySelector("#console_messages_container");
-    ref_console_messagesFade_top = document.querySelector("#console_messagesFade_top");
-    ref_console_messagesFade_bottom = document.querySelector("#console_messagesFade_bottom");
-    ref_console_messages = document.querySelector("#console_messages");
-    ref_console_inputBox_container = document.querySelector("#console_inputBox_container");
-    ref_console_messageInput = document.querySelector("#console_messageInput");
-    ref_console_sendMessageButton = document.querySelector("#console_sendMessageButton");
-}
-
-function unFocusInput() {
-    var tmp = document.createElement("input");
-    document.body.appendChild(tmp);
-    tmp.focus();
-    document.body.removeChild(tmp);
-}
-*/
-
 export enum EMessageTypes {
     "NONE",
     "NORMAL",
