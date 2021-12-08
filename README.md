@@ -10,4 +10,4 @@ Tech Stack:
  * HTML
  * CSS
 
-![alt text](https://github.com/[username]/[reponame]/blob/[branch]/image.jpg?raw=true)
+![alt text](https://raw.githubusercontent.com/machineman1357/Networking-Template-Console_React-TS-Vite-WS/master/pres.png)
