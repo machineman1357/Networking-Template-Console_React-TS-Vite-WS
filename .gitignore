@@ -1,5 +1,8 @@
-client/node_modules/
-server/node_modules/
-
 # prepend with a forward slash '/' in order to ignore just the file specified (not prepending forward slash ignores ALL files with name)
 # ex.: /test-file-to-be-ignored.txt
+
+client/dist/
+client/node_modules/
+
+server/build/
+server/node_modules/
