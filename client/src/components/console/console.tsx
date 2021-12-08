@@ -5,6 +5,7 @@ import { ENetworkMessageTypes } from "../../client/networkMessageTypes";
 import { EWindowMessageTypes } from "../../client/vars";
 import { getPlayerColorHSL } from "../../utilities/utilities";
 import { HelpConsoleMessage, NormalConsoleMessage, PlayerConsoleMessage, SetNameConsoleMessage } from "../console-messages/console-messages";
+import { getCommandObj } from "./commands";
 
 import consoleStyles from "./console.module.css";
 import prettyLineStyles from "./pretty-line.module.css";
@@ -27,37 +28,6 @@ function setRefs() {
     ref_console_sendMessageButton = document.querySelector("#console_sendMessageButton");
 }
 
-export function console_toggle() {
-    if (isConsoleOpen) {
-        closeConsole();
-    } else {
-        openConsole();
-    }
-
-    isConsoleOpen = !isConsoleOpen;
-}
-
-export function onEnterPressed() {
-    if (document.activeElement === ref_console_messageInput) {
-        sendMessage();
-    } else {
-        if (isConsoleOpen) {
-            ref_console_messageInput.focus();
-        }
-    }
-}
-
-function closeConsole() {
-    ref_console_container.classList.remove("console_container_fadeIn");
-
-    unFocusInput();
-}
-
-function openConsole() {
-    ref_console_container.classList.add("console_container_fadeIn");
-    ref_console_messagesFade_top.style.background = "#000000b3";
-}
-
 function unFocusInput() {
     var tmp = document.createElement("input");
     document.body.appendChild(tmp);
@@ -66,7 +36,8 @@ function unFocusInput() {
 }
 */
 
-enum EMessageType {
+export enum EMessageTypes {
+    "NONE",
     "NORMAL",
     "PLAYER",
     "HELP",
@@ -75,14 +46,18 @@ enum EMessageType {
 }
 
 interface IConsoleState {
-    messages: Array<{ msgType: EMessageType, msg: string, playerName: string, colorHSL: string }>,
-    isDisabled_bottomMessagesFade: boolean
+    messages: Array<{ msgType: EMessageTypes, msg: string, playerName: string, colorHSL: string }>;
+    isDisabled_topMessagesFade: boolean;
+    isDisabled_bottomMessagesFade: boolean;
+    isConsoleOpen: boolean;
 }
 
 export class Console extends Component<{}, IConsoleState> {
+    public ref_consoleContainer: React.RefObject<HTMLInputElement> = createRef();
     public ref_messageInput: React.RefObject<HTMLInputElement> = createRef();
     public ref_consoleMessages: React.RefObject<HTMLDivElement> = createRef();
     public ref_messagesContainer: React.RefObject<HTMLDivElement> = createRef();
+    public ref_messagesFade_top: React.RefObject<HTMLDivElement> = createRef();
     public ref_messagesFade_bottom: React.RefObject<HTMLDivElement> = createRef();
 
     public backLoggedMessages: Array<string> = [];
@@ -93,7 +68,9 @@ export class Console extends Component<{}, IConsoleState> {
 
         this.state = {
             messages: [],
-            isDisabled_bottomMessagesFade: true
+            isDisabled_topMessagesFade: true,
+            isDisabled_bottomMessagesFade: true,
+            isConsoleOpen: false
         };
 
         window.addEventListener('message', (event) => {
@@ -107,38 +84,52 @@ export class Console extends Component<{}, IConsoleState> {
         for (let i = 0; i < this.backLoggedMessages.length; i++) {
             const backLoggedMessage = this.backLoggedMessages[i];
             console.log("adding backlogged message:", backLoggedMessage);
-            this.addMessage(backLoggedMessage, EMessageType.NORMAL, "", "");
+            this.addMessage(backLoggedMessage, EMessageTypes.NORMAL, "", "");
         }
     }
 
-    componentDidUpdate() {
-        if(this.ref_messagesContainer.current && this.ref_consoleMessages.current) {
-            // this.ref_messagesContainer.current.scrollTop = this.ref_consoleMessages.current.scrollHeight;
+    console_toggle() {
+        if(!this._ismounted) return;
+
+        if (this.state.isConsoleOpen) {
+            this.setState({ isConsoleOpen: false });
+        } else {
+            this.setState({ isConsoleOpen: true });
         }
     }
 
-    onMessagesScroll() {
+    onEnterPressed() {
+        if (document.activeElement === this.ref_messageInput.current) {
+            this.sendMessage();
+        } else {
+            if (this.state.isConsoleOpen && this.ref_messageInput.current) {
+                this.ref_messageInput.current.focus();
+            }
+        }
+    }
+
+    onMessagesScroll = (event: any) => {
         if(!this.ref_messagesContainer.current) return;
 
         const messagesContainer_rect = this.ref_messagesContainer.current.getBoundingClientRect();
         const scrollbarEnd = Math.round(this.ref_messagesContainer.current.scrollTop + messagesContainer_rect.height);
     
-        if (scrollbarEnd >= this.ref_messagesContainer.current.scrollHeight - 5) { // add a bit of "padding" in case values are ex.: 544 scrollEnd and 545 scrollHeight
+        if (scrollbarEnd >= this.ref_messagesContainer.current.scrollHeight) { // add a bit of "padding" in case values are ex.: 544 scrollEnd and 545 scrollHeight
             this.setState({ isDisabled_bottomMessagesFade: true });
         } else {
             this.setState({ isDisabled_bottomMessagesFade: false });
         }
     
         if (this.ref_messagesContainer.current.scrollTop === 0) {
-            this.setState({ isDisabled_bottomMessagesFade: true });
+            this.setState({ isDisabled_topMessagesFade: true });
         } else {
-            this.setState({ isDisabled_bottomMessagesFade: false });
+            this.setState({ isDisabled_topMessagesFade: false });
         }
     }
 
     attempt_sendMessageOnNetwork(msg: any) {
         if (!isConnectedToServer) {
-            this.addMessage("Cannot send message over network: not connected to server.", EMessageType.NORMAL, "", "");
+            this.addMessage("Cannot send message over network: not connected to server.", EMessageTypes.NORMAL, "", "");
 
             return;
         }
@@ -156,16 +147,22 @@ export class Console extends Component<{}, IConsoleState> {
     }
 
     onOutsideMessage(data: { windowMessageType: EWindowMessageTypes, msg: string }) {
-        if (data.windowMessageType !== undefined && data.windowMessageType === EWindowMessageTypes.CONSOLE_MESSAGE) {
-            if (this._ismounted) {
-                this.addMessage(data.msg, EMessageType.NORMAL, "", "");
-            } else {
-                this.backLoggedMessages.push(data.msg);
+        if (data.windowMessageType !== undefined) {
+            if(data.windowMessageType === EWindowMessageTypes.CONSOLE_MESSAGE) {
+                if (this._ismounted) {
+                    this.addMessage(data.msg, EMessageTypes.NORMAL, "", "");
+                } else {
+                    this.backLoggedMessages.push(data.msg);
+                }
+            } else if(data.windowMessageType === EWindowMessageTypes.CONSOLE_TOGGLE) {
+                this.console_toggle();
+            } else if(data.windowMessageType === EWindowMessageTypes.CONSOLE_SEND_MESSAGE_FROM_ENTER) {
+                this.onEnterPressed();
             }
         }
     }
 
-    addMessage(msg: string, msgType: EMessageType, playerName: string, colorHSL: string) {
+    addMessage(msg: string, msgType: EMessageTypes, playerName: string, colorHSL: string) {
         let messageEntry = {
             msgType: msgType,
             msg: msg,
@@ -176,12 +173,16 @@ export class Console extends Component<{}, IConsoleState> {
         this.setState((state: any) => {
             // Important: read `state` instead of `this.state` when updating.
             return { messages: state.messages.concat(messageEntry) }
+        }, () => {
+            if(this.ref_messagesContainer.current && this.ref_consoleMessages.current) {
+                this.ref_messagesContainer.current.scrollTop = this.ref_consoleMessages.current.scrollHeight;
+            }
         });
     }
 
     doCommand_setPlayerName(msg: string) {
         if (!isConnectedToServer) {
-            this.addMessage("Cannot set name: not connected to server.", EMessageType.COMMAND, "", "");
+            this.addMessage("Cannot set name: not connected to server.", EMessageTypes.COMMAND, "", "");
 
             return;
         }
@@ -194,7 +195,7 @@ export class Console extends Component<{}, IConsoleState> {
         clientData.setPlayerNameAndColor(playerName, playerColorDegree);
 
         const playerColorHSL = getPlayerColorHSL(playerColorDegree);
-        this.addMessage("", EMessageType.SET_NAME, clientData.playerName, playerColorHSL);
+        this.addMessage("", EMessageTypes.SET_NAME, clientData.playerName, playerColorHSL);
 
         const payload_setPlayerName = [
             ENetworkMessageTypes.SET_PLAYER_NAME,
@@ -205,22 +206,14 @@ export class Console extends Component<{}, IConsoleState> {
     }
 
     checkWhichCommandToDo(msg: string) {
-        const msgSplit = msg.split(" ");
+        this.addMessage(msg, EMessageTypes.NORMAL, "", "");
 
-        this.addMessage(msg, EMessageType.NORMAL, "", "");
-
-        if ((msgSplit[0] === "!name" || msgSplit[0] === "!n")) {
-            if (msgSplit.length === 1) {
-                this.addMessage("Please fill in name parameter.", EMessageType.COMMAND, "", "");
-            } else if (msgSplit.length === 2) {
-                this.doCommand_setPlayerName(msg);
-            } else {
-                this.addMessage("Unknown command: " + msg, EMessageType.COMMAND, "", "");
-            }
-        } else if ((msgSplit[0] === "!help" || msgSplit[0] === "!h") && msgSplit.length === 1) {
-            this.addMessage("", EMessageType.HELP, "", "");
+        const commandObj = getCommandObj(msg);
+        
+        if(commandObj.msgType === EMessageTypes.SET_NAME) {
+            this.doCommand_setPlayerName(commandObj.msg);
         } else {
-            this.addMessage("Unknown command: " + msg, EMessageType.COMMAND, "", "");
+            this.addMessage(commandObj.msg, commandObj.msgType, "", "");
         }
     }
 
@@ -236,19 +229,22 @@ export class Console extends Component<{}, IConsoleState> {
             const playerColorDegree = clientData.playerColorDegree;
 
             const playerColorHSL = getPlayerColorHSL(playerColorDegree);
-            this.addMessage(message, EMessageType.PLAYER, playerName, playerColorHSL);
+            this.addMessage(message, EMessageTypes.PLAYER, playerName, playerColorHSL);
 
             this.attempt_sendMessageOnNetwork(message);
         }
 
         this.ref_messageInput.current.value = "";
+        this.ref_messageInput.current.blur();
     }
 
     render() {
-        const messagesFade_bottom_style = this.state.isDisabled_bottomMessagesFade ? consoleStyles.console_messagesFade_disabled : undefined;
+        const consoleContainer_class = this.state.isConsoleOpen ? consoleStyles.console_container_fadeIn : undefined;
+        const messagesFade_top_class = this.state.isDisabled_topMessagesFade ? consoleStyles.console_messagesFade_disabled : undefined;
+        const messagesFade_bottom_class = this.state.isDisabled_bottomMessagesFade ? consoleStyles.console_messagesFade_disabled : undefined;
 
         return (
-            <div className={consoleStyles.console_container}>
+            <div ref={this.ref_consoleContainer} className={`${consoleStyles.console_container} ${consoleContainer_class}`}>
                 <div className={consoleStyles.console_bg}></div>
                 <div className={consoleStyles.console_dropShadow}></div>
                 <div className={consoleStyles.console_messagesAndSendButton_container}>
@@ -256,26 +252,26 @@ export class Console extends Component<{}, IConsoleState> {
                         <div className={consoleStyles.console_titleAndDescriptionAndMessagesContainer}>
                             <div className={consoleStyles.console_title}>Console</div>
                             <div className={consoleStyles.console_description}>Messages and commands. Press enter to message.</div>
-                            <div ref={this.ref_messagesContainer} className={consoleStyles.console_messageBox_container}>
-                                <div className={`${consoleStyles.console_messagesFade_top} ${consoleStyles.console_messagesFade} ${consoleStyles.console_messagesFade_disabled}`} style={{ top: "-60px" }}></div>
-                                <div ref={this.ref_consoleMessages} className={`${consoleStyles.console_messages_container} ${scrollbarStyles.scrollbar}`}>
-                                    <div className={consoleStyles.console_messages}>
+                            <div className={consoleStyles.console_messageBox_container}>
+                                <div ref={this.ref_messagesFade_top} className={`${consoleStyles.console_messagesFade_top} ${consoleStyles.console_messagesFade}  ${messagesFade_top_class}`} style={{ top: "-60px" }}></div>
+                                <div ref={this.ref_messagesContainer} className={`${consoleStyles.console_messages_container} ${scrollbarStyles.scrollbar}`} onScroll={this.onMessagesScroll}>
+                                    <div ref={this.ref_consoleMessages} className={consoleStyles.console_messages}>
                                         {this.state.messages.map((msg, i) => {
-                                            if (msg.msgType === EMessageType.NORMAL) {
+                                            if (msg.msgType === EMessageTypes.NORMAL) {
                                                 return <NormalConsoleMessage key={i} message={msg.msg} />
-                                            } else if (msg.msgType === EMessageType.PLAYER) {
+                                            } else if (msg.msgType === EMessageTypes.PLAYER) {
                                                 return <PlayerConsoleMessage key={i} message={msg.msg} playerName={msg.playerName} colorHSL={msg.colorHSL} />
-                                            } else if (msg.msgType === EMessageType.HELP) {
+                                            } else if (msg.msgType === EMessageTypes.HELP) {
                                                 return <HelpConsoleMessage key={i} message={msg.msg} />
-                                            } else if (msg.msgType === EMessageType.SET_NAME) {
+                                            } else if (msg.msgType === EMessageTypes.SET_NAME) {
                                                 return <SetNameConsoleMessage key={i} playerName={msg.playerName} colorHSL={msg.colorHSL} />
-                                            } else if (msg.msgType === EMessageType.COMMAND) {
+                                            } else if (msg.msgType === EMessageTypes.COMMAND) {
                                                 return <NormalConsoleMessage key={i} message={msg.msg} />
                                             }
                                         })}
                                     </div>
                                 </div>
-                                <div ref={this.ref_messagesFade_bottom} className={`${consoleStyles.console_messagesFade} ${messagesFade_bottom_style}`} style={{ bottom: "-60px" }}></div>
+                                <div ref={this.ref_messagesFade_bottom} className={`${consoleStyles.console_messagesFade} ${messagesFade_bottom_class}`} style={{ bottom: "-60px" }}></div>
                             </div>
                         </div>
                         <div className={consoleStyles.console_inputBox_container}>

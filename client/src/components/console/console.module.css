@@ -1,18 +1,19 @@
 .console_container {
     position: absolute;
     left: 50%;
-    /* top: -100px; */
+    top: -100px;
     transform: translate(-50%, 0);
     width: calc(100% - 100px);
     height: 60%;
     user-select: none;
     transition: 500ms;
-    /* opacity: 0; */
+    opacity: 0;
 }
 
 .console_container_fadeIn {
     opacity: 1 !important;
     top: 50px !important;
+    background: #000000b3;
 }
 
 .console_bg {
