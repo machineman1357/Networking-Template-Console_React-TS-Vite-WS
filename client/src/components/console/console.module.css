@@ -19,7 +19,7 @@
 .console_bg {
     width: 100%;
     height: 100%;
-    background: linear-gradient( 0deg, rgba(59, 56, 102, 1) 0%, rgba(56, 65, 120, 1) 29%, rgba(58, 87, 153, 1) 100%);
+    background: linear-gradient(0deg, rgba(59, 56, 102, 1) 0%, rgba(56, 65, 120, 1) 29%, rgba(58, 87, 153, 1) 100%);
     opacity: 0.8;
     box-shadow: inset 0 0 2px #111226;
 }
@@ -116,7 +116,7 @@
 .console_sendMessageButton {
     width: 175px;
     height: 33px;
-    background: linear-gradient( 90deg, #336deb, #3f71dd);
+    background: linear-gradient(90deg, #336deb, #3f71dd);
     color: #d4dbf9;
     font-size: 12px;
     display: flex;
@@ -126,6 +126,12 @@
     font-weight: 500;
 }
 
+.console_title_materialFont {
+    font-family: Material Icons;
+    font-size: 50px;
+    margin: 0 0 0 15px;
+}
+
 .console_button_materialFont {
     font-family: Material Icons;
     font-size: 25px;
@@ -133,7 +139,7 @@
 }
 
 .console_sendMessageButton:hover {
-    background: linear-gradient( 90deg, #4e81f0, #5284f0);
+    background: linear-gradient(90deg, #4e81f0, #5284f0);
     cursor: pointer;
 }
 

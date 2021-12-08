@@ -1,5 +1,6 @@
+import { clientData } from "./client-data";
 import { ENetworkMessageTypes } from "./networkMessageTypes";
-import { EWindowMessageTypes } from "./vars";
+import { EWindowMessageTypes, IWindowMessage_consoleMessage, IWindowMessage_consoleSetConnected } from "./vars";
 
 // import { messageFiltering_filterMessage } from "./client_messageFiltering.js";
 
@@ -17,16 +18,18 @@ function connectToServer() {
     const PORT = 8080;
     const webSocketIPString = 'ws://' + IP + ':' + PORT;
 
-    window.postMessage({ windowMessageType: EWindowMessageTypes.CONSOLE_MESSAGE, msg: "Connecting to server at " + webSocketIPString + "..." });
+    window.postMessage({ windowMessageType: EWindowMessageTypes.CONSOLE_MESSAGE, data: { msg: "Connecting to server at " + webSocketIPString + "..." } as IWindowMessage_consoleMessage });
 
     ws = new WebSocket(webSocketIPString);
     console.log(ws);
     // ws.binaryType = 'arraybuffer';
 
     ws.onopen = function open() {
-        window.postMessage({ windowMessageType: EWindowMessageTypes.CONSOLE_MESSAGE, msg: "Connected to server!" });
+        window.postMessage({ windowMessageType: EWindowMessageTypes.CONSOLE_MESSAGE, data: { msg: "Connected to server!" } as IWindowMessage_consoleMessage });
+        window.postMessage({ windowMessageType: EWindowMessageTypes.CONSOLE_SET_CONNECTED, data: { isConnected: true } as IWindowMessage_consoleSetConnected });
         ws.send('something');
         isConnectedToServer = true;
+        clientData.handleOnConnected();
     };
 
     ws.onmessage = function message(data: any) {
@@ -35,13 +38,14 @@ function connectToServer() {
 
     ws.onclose = function () {
         if (isConnectedToServer) {
-            window.postMessage({ windowMessageType: EWindowMessageTypes.CONSOLE_MESSAGE, msg: "Disconnected from server." });
+            window.postMessage({ windowMessageType: EWindowMessageTypes.CONSOLE_MESSAGE, data: { msg: "Disconnected from server." } as IWindowMessage_consoleMessage });
         }
         else {
-            window.postMessage({ windowMessageType: EWindowMessageTypes.CONSOLE_MESSAGE, msg: "Failed to connect to server." });
+            window.postMessage({ windowMessageType: EWindowMessageTypes.CONSOLE_MESSAGE, data: { msg: "Failed to connect to server." } as IWindowMessage_consoleMessage });
         }
 
         isConnectedToServer = false;
+        window.postMessage({ windowMessageType: EWindowMessageTypes.CONSOLE_SET_CONNECTED, data: { isConnected: false } as IWindowMessage_consoleSetConnected });
     };
 
     ws.onerror = function(error: any) {

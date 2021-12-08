@@ -2,7 +2,7 @@ import { Component, createRef } from "react";
 import { client_sendPayload, isConnectedToServer } from "../../client/client";
 import { clientData } from "../../client/client-data";
 import { ENetworkMessageTypes } from "../../client/networkMessageTypes";
-import { EWindowMessageTypes } from "../../client/vars";
+import { EWindowMessageTypes, IWindowMessage_consoleMessage, IWindowMessage_consoleSetConnected } from "../../client/vars";
 import { getPlayerColorHSL } from "../../utilities/utilities";
 import { HelpConsoleMessage, NormalConsoleMessage, PlayerConsoleMessage, SetNameConsoleMessage } from "../console-messages/console-messages";
 import { getCommandObj } from "./commands";
@@ -25,6 +25,7 @@ interface IConsoleState {
     isDisabled_topMessagesFade: boolean;
     isDisabled_bottomMessagesFade: boolean;
     isConsoleOpen: boolean;
+    isConnected: boolean;
 }
 
 export class Console extends Component<{}, IConsoleState> {
@@ -45,11 +46,12 @@ export class Console extends Component<{}, IConsoleState> {
             messages: [],
             isDisabled_topMessagesFade: true,
             isDisabled_bottomMessagesFade: true,
-            isConsoleOpen: false
+            isConsoleOpen: false,
+            isConnected: false
         };
 
         window.addEventListener('message', (event) => {
-            this.onOutsideMessage(event.data);
+            this.onOutsideMessage(event.data.windowMessageType, event.data.data);
         });
     }
 
@@ -61,10 +63,12 @@ export class Console extends Component<{}, IConsoleState> {
             console.log("adding backlogged message:", backLoggedMessage);
             this.addMessage(backLoggedMessage, EMessageTypes.NORMAL, "", "");
         }
+
+        this.setState({ isConnected: isConnectedToServer });
     }
 
     console_toggle() {
-        if(!this._ismounted) return;
+        if (!this._ismounted) return;
 
         if (this.state.isConsoleOpen) {
             this.setState({ isConsoleOpen: false });
@@ -84,17 +88,17 @@ export class Console extends Component<{}, IConsoleState> {
     }
 
     onMessagesScroll = (event: any) => {
-        if(!this.ref_messagesContainer.current) return;
+        if (!this.ref_messagesContainer.current) return;
 
         const messagesContainer_rect = this.ref_messagesContainer.current.getBoundingClientRect();
         const scrollbarEnd = Math.round(this.ref_messagesContainer.current.scrollTop + messagesContainer_rect.height);
-    
+
         if (scrollbarEnd >= this.ref_messagesContainer.current.scrollHeight) { // add a bit of "padding" in case values are ex.: 544 scrollEnd and 545 scrollHeight
             this.setState({ isDisabled_bottomMessagesFade: true });
         } else {
             this.setState({ isDisabled_bottomMessagesFade: false });
         }
-    
+
         if (this.ref_messagesContainer.current.scrollTop === 0) {
             this.setState({ isDisabled_topMessagesFade: true });
         } else {
@@ -121,18 +125,29 @@ export class Console extends Component<{}, IConsoleState> {
         client_sendPayload(payload_msgBoxMsg);
     }
 
-    onOutsideMessage(data: { windowMessageType: EWindowMessageTypes, msg: string }) {
-        if (data.windowMessageType !== undefined) {
-            if(data.windowMessageType === EWindowMessageTypes.CONSOLE_MESSAGE) {
+    onOutsideMessage(windowMessageType: EWindowMessageTypes, data: any) {
+        if (windowMessageType !== undefined) {
+            if (windowMessageType === EWindowMessageTypes.CONSOLE_MESSAGE) {
+                const { msg } = data as IWindowMessage_consoleMessage;
+
                 if (this._ismounted) {
-                    this.addMessage(data.msg, EMessageTypes.NORMAL, "", "");
+                    this.addMessage(msg, EMessageTypes.NORMAL, "", "");
                 } else {
-                    this.backLoggedMessages.push(data.msg);
+                    this.backLoggedMessages.push(msg);
                 }
-            } else if(data.windowMessageType === EWindowMessageTypes.CONSOLE_TOGGLE) {
-                this.console_toggle();
-            } else if(data.windowMessageType === EWindowMessageTypes.CONSOLE_SEND_MESSAGE_FROM_ENTER) {
-                this.onEnterPressed();
+            } else if (windowMessageType === EWindowMessageTypes.CONSOLE_TOGGLE) {
+                if (this._ismounted) {
+                    this.console_toggle();
+                }
+            } else if (windowMessageType === EWindowMessageTypes.CONSOLE_SEND_MESSAGE_FROM_ENTER) {
+                if (this._ismounted) {
+                    this.onEnterPressed();
+                }
+            } else if (windowMessageType === EWindowMessageTypes.CONSOLE_SET_CONNECTED) {
+                if (this._ismounted) {
+                    const { isConnected } = data as IWindowMessage_consoleSetConnected;
+                this.setState({ isConnected: isConnected })
+                }
             }
         }
     }
@@ -149,7 +164,7 @@ export class Console extends Component<{}, IConsoleState> {
             // Important: read `state` instead of `this.state` when updating.
             return { messages: state.messages.concat(messageEntry) }
         }, () => {
-            if(this.ref_messagesContainer.current && this.ref_consoleMessages.current) {
+            if (this.ref_messagesContainer.current && this.ref_consoleMessages.current) {
                 this.ref_messagesContainer.current.scrollTop = this.ref_consoleMessages.current.scrollHeight;
             }
         });
@@ -184,8 +199,8 @@ export class Console extends Component<{}, IConsoleState> {
         this.addMessage(msg, EMessageTypes.NORMAL, "", "");
 
         const commandObj = getCommandObj(msg);
-        
-        if(commandObj.msgType === EMessageTypes.SET_NAME) {
+
+        if (commandObj.msgType === EMessageTypes.SET_NAME) {
             this.doCommand_setPlayerName(commandObj.msg);
         } else {
             this.addMessage(commandObj.msg, commandObj.msgType, "", "");
@@ -193,7 +208,7 @@ export class Console extends Component<{}, IConsoleState> {
     }
 
     sendMessage() {
-        if(!this.ref_messageInput.current) return;
+        if (!this.ref_messageInput.current) return;
 
         const message = this.ref_messageInput.current.value;
 
@@ -216,6 +231,7 @@ export class Console extends Component<{}, IConsoleState> {
     render() {
         const consoleContainer_class = this.state.isConsoleOpen ? consoleStyles.console_container_fadeIn : undefined;
         const messagesFade_top_class = this.state.isDisabled_topMessagesFade ? consoleStyles.console_messagesFade_disabled : undefined;
+        const connectedSymbolText = this.state.isConnected ? "wifi" : "wifi_off";
         const messagesFade_bottom_class = this.state.isDisabled_bottomMessagesFade ? consoleStyles.console_messagesFade_disabled : undefined;
 
         return (
@@ -225,7 +241,12 @@ export class Console extends Component<{}, IConsoleState> {
                 <div className={consoleStyles.console_messagesAndSendButton_container}>
                     <div className={consoleStyles.console_messagesAndInputBox_container}>
                         <div className={consoleStyles.console_titleAndDescriptionAndMessagesContainer}>
-                            <div className={consoleStyles.console_title}>Console</div>
+                            <div className={consoleStyles.console_title}>
+                                Console
+                                <span className={`material-icons-outlined ${consoleStyles.console_title_materialFont}`}>
+                                    {connectedSymbolText}
+                                </span>
+                            </div>
                             <div className={consoleStyles.console_description}>Messages and commands. Press enter to message.</div>
                             <div className={consoleStyles.console_messageBox_container}>
                                 <div ref={this.ref_messagesFade_top} className={`${consoleStyles.console_messagesFade_top} ${consoleStyles.console_messagesFade}  ${messagesFade_top_class}`} style={{ top: "-60px" }}></div>

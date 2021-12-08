@@ -33,4 +33,8 @@ class ClientData {
 
 		this.playerColorDegree = playerColorDegree;
 	}
+
+    handleOnConnected() {
+        this.playerName = "ONLINE_DUDE";
+    }
 }
